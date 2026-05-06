@@ -1,5 +1,4 @@
-// On-device OCR using WeChat VKSession + OCR plugin
-// Requires plugin "ocr-plugin" (wx4418e3e031e551be) declared in pages.json
+// On-device OCR using WeChat VKSession
 
 interface OCRAnchor {
   text: string

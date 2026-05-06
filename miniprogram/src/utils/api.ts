@@ -5,7 +5,7 @@
 // ngrok 穿透:  https://xxx.ngrok-free.app
 // 云服务器:    https://your-domain.com
 // ============================================================
-const HOST = 'https://hurt-postage-cabbage.ngrok-free.dev'
+const HOST = 'http://127.0.0.1:8080'
 
 export const BASE_URL = HOST + '/api/v1'
 export const SERVER_HOST = HOST
