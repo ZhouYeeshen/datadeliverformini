@@ -1,0 +1,73 @@
+{
+  "pages": [
+    {
+      "path": "pages/login/index",
+      "style": { "navigationBarTitleText": "经营数据上报" }
+    },
+    {
+      "path": "pages/bind/index",
+      "style": { "navigationBarTitleText": "绑定企业" }
+    },
+    {
+      "path": "pages/home/index",
+      "style": { "navigationBarTitleText": "首页" }
+    },
+    {
+      "path": "pages/scan/index",
+      "style": { "navigationBarTitleText": "扫描单据" }
+    },
+    {
+      "path": "pages/report/index",
+      "style": { "navigationBarTitleText": "确认上报" }
+    },
+    {
+      "path": "pages/history/index",
+      "style": { "navigationBarTitleText": "历史记录" }
+    },
+    {
+      "path": "pages/profile/index",
+      "style": { "navigationBarTitleText": "我的" }
+    }
+  ],
+  "plugins": {
+    "ocr-plugin": {
+      "version": "3.1.2",
+      "provider": "wx4418e3e031e551be"
+    }
+  },
+  "globalStyle": {
+    "navigationBarTextStyle": "black",
+    "navigationBarBackgroundColor": "#F8F8F8",
+    "backgroundColor": "#F5F5F5"
+  },
+  "tabBar": {
+    "color": "#999",
+    "selectedColor": "#2979FF",
+    "list": [
+      {
+        "pagePath": "pages/home/index",
+        "text": "首页",
+        "iconPath": "static/tab-home.png",
+        "selectedIconPath": "static/tab-home-active.png"
+      },
+      {
+        "pagePath": "pages/scan/index",
+        "text": "扫描",
+        "iconPath": "static/tab-scan.png",
+        "selectedIconPath": "static/tab-scan-active.png"
+      },
+      {
+        "pagePath": "pages/history/index",
+        "text": "记录",
+        "iconPath": "static/tab-history.png",
+        "selectedIconPath": "static/tab-history-active.png"
+      },
+      {
+        "pagePath": "pages/profile/index",
+        "text": "我的",
+        "iconPath": "static/tab-me.png",
+        "selectedIconPath": "static/tab-me-active.png"
+      }
+    ]
+  }
+}
