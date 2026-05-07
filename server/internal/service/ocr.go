@@ -9,7 +9,6 @@ import (
 	"image/jpeg"
 	_ "image/png"
 	"io"
-	"log"
 	"math"
 	"net/http"
 	"os"
@@ -91,20 +90,16 @@ func (s *OCRService) ProcessImageFromBase64(b64 string) (*OCRResult, error) {
 // recognize calls WeChat OCR API (free, built into WeChat platform).
 func (s *OCRService) recognize(imageData []byte) (string, string) {
 	if s.wechatAppID == "" || s.wechatSecret == "" {
-		log.Println("[OCR] WeChat credentials not configured, appID empty:", s.wechatAppID == "")
 		return "", "none"
 	}
 
 	token, err := s.getAccessToken()
 	if err != nil {
-		log.Println("[OCR] Failed to get access token:", err)
 		return "", "none"
 	}
-	log.Println("[OCR] Got access token:", token[:20]+"...")
 
 	text, err := s.callWeChatOCR(token, imageData)
 	if err != nil {
-		log.Println("[OCR] WeChat OCR API error:", err)
 		return "", "none"
 	}
 	if text != "" {
@@ -126,9 +121,6 @@ func (s *OCRService) callWeChatOCR(token string, imageData []byte) (string, erro
 	b64 := base64.StdEncoding.EncodeToString(data)
 	body, _ := json.Marshal(map[string]string{"img": b64})
 
-	log.Printf("[OCR] Request body size: %d bytes, img_base64_len: %d, img_data_len: %d",
-		len(body), len(b64), len(data))
-
 	req, err := http.NewRequest("POST",
 		"https://api.weixin.qq.com/cv/ocr/comm?access_token="+token,
 		bytes.NewReader(body))
@@ -144,7 +136,6 @@ func (s *OCRService) callWeChatOCR(token string, imageData []byte) (string, erro
 	defer resp.Body.Close()
 
 	respBody, _ := io.ReadAll(resp.Body)
-	log.Printf("[OCR] Response status: %d, body: %s", resp.StatusCode, string(respBody))
 
 	var result struct {
 		ErrCode int    `json:"errcode"`

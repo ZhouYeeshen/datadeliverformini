@@ -2,21 +2,10 @@
   <view class="scan-page">
     <!-- Camera view -->
     <view class="camera-area" v-if="!photoPath">
-      <camera
-        id="scanCamera"
-        device-position="back"
-        flash="off"
-        class="camera"
-        @error="onCameraError"
-        @ready="onCameraReady"
-      >
+      <camera device-position="back" flash="off" class="camera" @error="onCameraError">
         <cover-view class="camera-overlay">
           <cover-view class="scan-frame"></cover-view>
           <cover-view class="tips">将单据放入框内拍摄</cover-view>
-          <cover-view class="live-text" v-if="liveText">
-            <cover-view class="live-text-label">已识别到文字：</cover-view>
-            <cover-view class="live-text-content">{{ liveText }}</cover-view>
-          </cover-view>
         </cover-view>
       </camera>
       <view class="capture-bar">
@@ -30,9 +19,7 @@
       <image :src="photoPath" mode="widthFix" class="preview-img" />
       <view class="preview-actions">
         <button class="retake-btn" @click="retake">重拍</button>
-        <button class="ocr-btn" @click="doOCR" :loading="recognizing">
-          {{ liveText ? '使用已识别文字' : '识别单据' }}
-        </button>
+        <button class="ocr-btn" @click="doOCR" :loading="recognizing">识别单据</button>
       </view>
 
       <view class="ocr-progress" v-if="recognizing">
@@ -120,7 +107,7 @@
 import { ref, computed } from 'vue'
 import { onUnload } from '@dcloudio/uni-app'
 import { SERVER_HOST } from '../../utils/api'
-import { scanReceipt, parseText, initDeviceOCR } from '../../utils/ocr'
+import { scanReceipt } from '../../utils/ocr'
 import { saveOCRResult } from '../../utils/offline-sync'
 
 const photoPath = ref('')
@@ -128,7 +115,6 @@ const recognizing = ref(false)
 const ocrProgress = ref(0)
 const ocrDone = ref(false)
 const ocrTimer = ref<ReturnType<typeof setInterval> | null>(null)
-const liveText = ref('')
 
 const rawText = ref('')
 const engine = ref('')
@@ -159,21 +145,6 @@ const editableTotal = computed(() => {
   return Math.round(sum * 100) / 100
 })
 
-let vkStop: (() => void) | null = null
-
-function onCameraReady() {
-  // Start VKSession for real-time text detection
-  // @ts-ignore
-  const comp = uni.createCameraContext ? uni.createCameraContext('scanCamera') : null
-  const { supported, stop } = initDeviceOCR(comp, (text: string) => {
-    liveText.value = text.substring(0, 300)
-  })
-  if (!supported) {
-    console.log('[OCR] VKSession not available, will use backend fallback')
-  }
-  vkStop = stop
-}
-
 function takePhoto() {
   const ctx = uni.createCameraContext()
   ctx.takePhoto({
@@ -202,7 +173,6 @@ function retake() {
   photoPath.value = ''
   ocrDone.value = false
   rawText.value = ''
-  liveText.value = ''
   items.value = [{ label: '', value: 0 }]
 }
 
@@ -237,27 +207,17 @@ async function doOCR() {
     }, 200)
 
     let result
-
-    // If VKSession found text, use device text + backend parsing
-    if (liveText.value) {
-      ocrProgress.value = 40
-      result = await parseText(liveText.value)
-      result.engine = 'device-ocr'
-      result.photo_url = photoPath.value
-    } else {
-      // Fallback to backend OCR
-      try {
-        result = await scanReceipt(photoPath.value)
-      } catch {
-        result = {
-          restaurant_revenue: 0, retail_revenue: 0,
-          accommodation_revenue: 0, tobacco_alcohol_revenue: 0,
-          other_revenue: 0, total_revenue: 0,
-          raw_text: '', engine: '', confidence: '', photo_url: ''
-        }
-        saveOCRResult(result)
-        uni.showToast({ title: '网络不可用，已暂存本地', icon: 'none' })
+    try {
+      result = await scanReceipt(photoPath.value)
+    } catch {
+      result = {
+        restaurant_revenue: 0, retail_revenue: 0,
+        accommodation_revenue: 0, tobacco_alcohol_revenue: 0,
+        other_revenue: 0, total_revenue: 0,
+        raw_text: '', engine: '', confidence: '', photo_url: ''
       }
+      saveOCRResult(result)
+      uni.showToast({ title: '网络不可用，已暂存本地', icon: 'none' })
     }
 
     clearInterval(ocrTimer.value)
@@ -266,12 +226,14 @@ async function doOCR() {
 
     rawText.value = result.raw_text || ''
     engine.value = result.engine || ''
+    // Server returns relative path like /uploads/ocr_xxx.png, make it absolute
     let serverPhoto = result.photo_url || ''
     if (serverPhoto && serverPhoto.startsWith('/uploads/')) {
       serverPhoto = SERVER_HOST + serverPhoto
     }
     photoUrl.value = serverPhoto || photoPath.value
 
+    // Build editable items from recognized categories
     const list: AmountItem[] = []
     const cats: Array<keyof typeof cateLabels> = ['restaurant_revenue', 'retail_revenue', 'accommodation_revenue', 'tobacco_alcohol_revenue', 'other_revenue']
     for (const c of cats) {
@@ -279,6 +241,7 @@ async function doOCR() {
         list.push({ label: cateLabels[c], value: result[c] })
       }
     }
+    // If nothing categorized but total exists, add as single item
     if (list.length === 0 && result.total_revenue > 0) {
       list.push({ label: '营业额', value: result.total_revenue })
     }
@@ -318,10 +281,6 @@ onUnload(() => {
     clearInterval(ocrTimer.value)
     ocrTimer.value = null
   }
-  if (vkStop) {
-    vkStop()
-    vkStop = null
-  }
 })
 </script>
 
@@ -336,11 +295,6 @@ onUnload(() => {
 .capture-bar { position: absolute; bottom: 60rpx; left: 0; right: 0; display: flex; justify-content: center; gap: 40rpx; }
 .capture-btn { width: 200rpx; height: 80rpx; background: #2979FF; color: #fff; border-radius: 40rpx; border: none; font-size: 28rpx; }
 .album-btn { width: 200rpx; height: 80rpx; background: rgba(255,255,255,0.2); color: #fff; border-radius: 40rpx; border: 1rpx solid rgba(255,255,255,0.4); font-size: 28rpx; }
-
-/* Live text from VKSession */
-.live-text { position: absolute; bottom: 140rpx; left: 40rpx; right: 40rpx; background: rgba(0,0,0,0.75); border-radius: 12rpx; padding: 16rpx; max-height: 200rpx; overflow: hidden; }
-.live-text-label { color: #2979FF; font-size: 22rpx; display: block; }
-.live-text-content { color: #fff; font-size: 24rpx; word-break: break-all; display: block; margin-top: 8rpx; line-height: 1.5; }
 
 /* Preview */
 .preview-area { padding: 30rpx; background: #000; min-height: 100vh; }
