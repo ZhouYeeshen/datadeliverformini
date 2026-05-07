@@ -1,7 +1,9 @@
-// OCR integration for handwritten receipt scanning
-// Uploads photo to backend and receives revenue data from OCR processing
+// OCR integration — device-side VKSession (handwritten) or backend API fallback (printed)
+// VKSession supports both printed and handwritten text on-device, no API permission needed
+// Backend WeChat OCR API only supports printed text and requires API permission
 
-import { ocrRecognize } from './api'
+import { ocrRecognize, request } from './api'
+import { isVKSupported, startVKOCR, stopVKOCR } from './wechat-ocr'
 
 interface OCRResult {
   restaurant_revenue: number
@@ -31,7 +33,32 @@ export function parseOCRResult(rawData: any): OCRResult {
   }
 }
 
+// Send raw text to backend for category parsing
+export async function parseText(rawText: string): Promise<OCRResult> {
+  const res = await request('/wx/ocr/parse', {
+    method: 'POST',
+    data: { raw_text: rawText },
+    timeout: 15000
+  })
+  return parseOCRResult(res)
+}
+
+// Backend-based OCR (WeChat OCR API — requires backend API permission, printed text only)
 export async function scanReceipt(photoPath: string): Promise<OCRResult> {
   const result = await ocrRecognize(photoPath)
   return parseOCRResult(result)
 }
+
+// Device-side OCR via VKSession (supports handwritten text)
+export function initDeviceOCR(
+  cameraComp: any,
+  onText: (text: string) => void
+): { supported: boolean; stop: () => void } {
+  if (!isVKSupported()) {
+    return { supported: false, stop: () => {} }
+  }
+  const ok = startVKOCR(cameraComp, onText)
+  return { supported: ok, stop: stopVKOCR }
+}
+
+export { isVKSupported, startVKOCR, stopVKOCR }
