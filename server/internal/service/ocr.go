@@ -35,16 +35,22 @@ type OCRService struct {
 	httpClient    *http.Client
 	wechatAppID   string
 	wechatSecret  string
+	tcSecretID    string
+	tcSecretKey   string
+	tcRegion      string
 	tokenMu       sync.Mutex
 	accessToken   string
 	tokenExpireAt time.Time
 }
 
-func NewOCRService(appID, appSecret string) *OCRService {
+func NewOCRService(appID, appSecret, tcSecretID, tcSecretKey, tcRegion string) *OCRService {
 	return &OCRService{
 		httpClient:   &http.Client{Timeout: 30 * time.Second},
 		wechatAppID:  appID,
 		wechatSecret: appSecret,
+		tcSecretID:   tcSecretID,
+		tcSecretKey:  tcSecretKey,
+		tcRegion:     tcRegion,
 	}
 }
 
@@ -87,23 +93,35 @@ func (s *OCRService) ProcessImageFromBase64(b64 string) (*OCRResult, error) {
 	return result, nil
 }
 
-// recognize calls WeChat OCR API (free, built into WeChat platform).
+// recognize tries Tencent Cloud OCR first (handwritten + printed), then WeChat OCR fallback (printed only).
 func (s *OCRService) recognize(imageData []byte) (string, string) {
-	if s.wechatAppID == "" || s.wechatSecret == "" {
-		return "", "none"
+	// 1. Tencent Cloud GeneralHandwritingOCR (supports handwritten + printed)
+	if s.tcSecretID != "" && s.tcSecretKey != "" {
+		text, err := s.callTencentHandwritingOCR(imageData)
+		if err != nil {
+			fmt.Printf("[OCR] Tencent Cloud error: %v\n", err)
+		} else if text != "" {
+			return text, "tencent-handwriting"
+		} else {
+			fmt.Println("[OCR] Tencent Cloud returned empty text")
+		}
+	} else {
+		fmt.Println("[OCR] Tencent Cloud credentials not configured")
 	}
 
-	token, err := s.getAccessToken()
-	if err != nil {
-		return "", "none"
-	}
-
-	text, err := s.callWeChatOCR(token, imageData)
-	if err != nil {
-		return "", "none"
-	}
-	if text != "" {
-		return text, "wechat-ocr"
+	// 2. WeChat OCR API fallback (printed only, requires API permission)
+	if s.wechatAppID != "" && s.wechatSecret != "" {
+		token, err := s.getAccessToken()
+		if err != nil {
+			fmt.Printf("[OCR] WeChat access token error: %v\n", err)
+			return "", "none"
+		}
+		text, err := s.callWeChatOCR(token, imageData)
+		if err != nil {
+			fmt.Printf("[OCR] WeChat OCR error: %v\n", err)
+		} else if text != "" {
+			return text, "wechat-ocr"
+		}
 	}
 
 	return "", "none"

@@ -6,12 +6,19 @@ import (
 )
 
 type Config struct {
-	Server   ServerConfig
-	DB       DBConfig
-	Redis    RedisConfig
-	JWT      JWTConfig
-	WeChat   WeChatConfig
-	Storage  StorageConfig
+	Server       ServerConfig
+	DB           DBConfig
+	Redis        RedisConfig
+	JWT          JWTConfig
+	WeChat       WeChatConfig
+	TencentCloud TencentCloudConfig
+	Storage      StorageConfig
+}
+
+type TencentCloudConfig struct {
+	SecretID  string
+	SecretKey string
+	Region    string
 }
 
 type ServerConfig struct {
@@ -81,6 +88,11 @@ func Load() *Config {
 		WeChat: WeChatConfig{
 			AppID:     getEnv("WECHAT_APPID", ""),
 			AppSecret: getEnv("WECHAT_APPSECRET", ""),
+		},
+		TencentCloud: TencentCloudConfig{
+			SecretID:  getEnv("TENCENT_SECRET_ID", ""),
+			SecretKey: getEnv("TENCENT_SECRET_KEY", ""),
+			Region:    getEnv("TENCENT_REGION", "ap-guangzhou"),
 		},
 		Storage: StorageConfig{
 			Endpoint:  getEnv("STORAGE_ENDPOINT", ""),

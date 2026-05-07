@@ -30,7 +30,8 @@ func registerRoutes(r *gin.RouterGroup, db *gorm.DB, cfg *config.Config) *AppSer
 	alertSvc := service.NewAlertService(alertRepo, reportRepo, businessRepo)
 	statsSvc := service.NewStatisticsService(reportRepo, businessRepo)
 	posSvc := service.NewPOSService(posRepo, reportRepo, businessRepo)
-	ocrSvc := service.NewOCRService(cfg.WeChat.AppID, cfg.WeChat.AppSecret)
+	ocrSvc := service.NewOCRService(cfg.WeChat.AppID, cfg.WeChat.AppSecret,
+		cfg.TencentCloud.SecretID, cfg.TencentCloud.SecretKey, cfg.TencentCloud.Region)
 
 	authH := handler.NewAuthHandler(authSvc, cfg)
 	businessH := handler.NewBusinessHandler(businessSvc)

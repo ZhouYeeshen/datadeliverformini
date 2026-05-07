@@ -10,10 +10,6 @@
       "es6": true,
       "postcss": true
     },
-    "permission": {
-      "scope.camera": { "desc": "用于扫描手写单据" },
-      "scope.record": { "desc": "用于OCR识别" }
-    },
     "requiredPrivateInfos": ["getLocation"]
   },
   "uniStatistics": { "enable": false }
