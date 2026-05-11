@@ -24,8 +24,6 @@ import { wechatLogin } from '../../utils/api'
 const store = useAppStore()
 const loading = ref(false)
 
-const DEV_TEST_CODE = 'DEV_TEST_USER_DEV_TEST_USER_DEV'
-
 async function doLogin(code: string) {
   const res = await wechatLogin(code)
   store.setToken(res.token)
@@ -57,22 +55,9 @@ async function handleLogin() {
   }
 }
 
-onMounted(async () => {
-  // Already authenticated — skip login
+onMounted(() => {
   if (store.token && store.isBound) {
     uni.switchTab({ url: '/pages/home/index' })
-    return
-  }
-
-  if (store.isDev && !store.token) {
-    loading.value = true
-    try {
-      await doLogin(DEV_TEST_CODE)
-    } catch {
-      // fall through to manual login
-    } finally {
-      loading.value = false
-    }
   }
 })
 </script>
