@@ -34,7 +34,7 @@ async function doLogin(code: string) {
     store.setBusiness(res)
     uni.switchTab({ url: '/pages/home/index' })
   } else {
-    uni.navigateTo({ url: '/pages/bind/index' })
+    uni.switchTab({ url: '/pages/profile/index' })
   }
 }
 
