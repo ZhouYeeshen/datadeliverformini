@@ -37,6 +37,9 @@ export function getBusinessDetail(id: number) {
 export function getBusinessLedger(id: number) {
   return http.get(`/admin/businesses/${id}/ledger`)
 }
+export function createBusiness(data: any) {
+  return http.post('/admin/businesses', data)
+}
 export function updateBusiness(id: number, data: any) {
   return http.put(`/admin/businesses/${id}`, data)
 }

@@ -4,6 +4,7 @@
       <div class="search-bar">
         <el-input v-model="keyword" placeholder="搜索企业名称..." clearable style="width: 300px" @keyup.enter="loadData" />
         <el-button type="primary" @click="loadData">搜索</el-button>
+        <el-button type="success" @click="openAdd">添加商户</el-button>
       </div>
 
       <el-table :data="list" stripe v-loading="loading">
@@ -78,13 +79,55 @@
         <el-button type="primary" :loading="saving" @click="handleSave">保存</el-button>
       </template>
     </el-dialog>
+
+    <el-dialog v-model="addVisible" title="添加商户" width="500px" @close="resetAddForm">
+      <el-form ref="addFormRef" :model="addForm" :rules="rules" label-width="80px">
+        <el-form-item label="企业名称" prop="name">
+          <el-input v-model="addForm.name" />
+        </el-form-item>
+        <el-form-item label="法人" prop="legal_person">
+          <el-input v-model="addForm.legal_person" />
+        </el-form-item>
+        <el-form-item label="行业类型" prop="industry_type">
+          <el-select v-model="addForm.industry_type" style="width:100%">
+            <el-option label="餐饮" value="餐饮" />
+            <el-option label="零售" value="零售" />
+            <el-option label="住宿" value="住宿" />
+            <el-option label="烟酒" value="烟酒" />
+            <el-option label="混合" value="混合" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="营业执照号" prop="license_no">
+          <el-input v-model="addForm.license_no" />
+        </el-form-item>
+        <el-form-item label="联系电话" prop="contact_phone">
+          <el-input v-model="addForm.contact_phone" />
+        </el-form-item>
+        <el-form-item label="经营地址" prop="address">
+          <el-input v-model="addForm.address" type="textarea" :rows="2" />
+        </el-form-item>
+        <el-form-item label="状态" prop="status">
+          <el-switch
+            v-model="addForm.status"
+            :active-value="'active'"
+            :inactive-value="'disabled'"
+            active-text="正常"
+            inactive-text="禁用"
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="addVisible = false">取消</el-button>
+        <el-button type="primary" :loading="adding" @click="handleAdd">确认添加</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
 import { onMounted } from 'vue'
-import { getBusinesses, updateBusiness } from '@/api'
+import { getBusinesses, createBusiness, updateBusiness } from '@/api'
 import type { FormInstance } from 'element-plus'
 import { ElMessage } from 'element-plus'
 
@@ -140,6 +183,52 @@ function openEdit(row: any) {
 
 function resetForm() {
   formRef.value?.resetFields()
+}
+
+function resetAddForm() {
+  addFormRef.value?.resetFields()
+}
+
+// ---- Add ----
+const adding = ref(false)
+const addVisible = ref(false)
+const addFormRef = ref<FormInstance>()
+
+const addForm = reactive({
+  name: '',
+  legal_person: '',
+  industry_type: '',
+  license_no: '',
+  contact_phone: '',
+  address: '',
+  status: 'active'
+})
+
+function openAdd() {
+  addForm.name = ''
+  addForm.legal_person = ''
+  addForm.industry_type = ''
+  addForm.license_no = ''
+  addForm.contact_phone = ''
+  addForm.address = ''
+  addForm.status = 'active'
+  addVisible.value = true
+}
+
+async function handleAdd() {
+  const valid = await addFormRef.value?.validate().catch(() => false)
+  if (!valid) return
+  adding.value = true
+  try {
+    await createBusiness({ ...addForm })
+    ElMessage.success('添加成功')
+    addVisible.value = false
+    loadData()
+  } catch (err: any) {
+    ElMessage.error(err.response?.data?.error || '添加失败')
+  } finally {
+    adding.value = false
+  }
 }
 
 async function handleSave() {

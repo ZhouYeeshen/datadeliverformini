@@ -71,3 +71,34 @@ func (s *BusinessService) List(keyword string, page, pageSize int) ([]model.Busi
 func (s *BusinessService) GetDetail(id uint) (*BusinessProfile, error) {
 	return s.GetProfile(id)
 }
+
+func (s *BusinessService) Create(data map[string]any) (*model.Business, error) {
+	biz := &model.Business{Status: "active"}
+
+	if v, ok := data["name"]; ok {
+		biz.Name = v.(string)
+	}
+	if v, ok := data["legal_person"]; ok {
+		biz.LegalPerson = v.(string)
+	}
+	if v, ok := data["industry_type"]; ok {
+		biz.IndustryType = v.(string)
+	}
+	if v, ok := data["license_no"]; ok {
+		biz.LicenseNo = v.(string)
+	}
+	if v, ok := data["address"]; ok {
+		biz.Address = v.(string)
+	}
+	if v, ok := data["contact_phone"]; ok {
+		biz.ContactPhone = v.(string)
+	}
+	if v, ok := data["status"]; ok {
+		biz.Status = v.(string)
+	}
+
+	if err := s.bizRepo.Create(biz); err != nil {
+		return nil, err
+	}
+	return biz, nil
+}

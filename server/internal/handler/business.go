@@ -70,6 +70,19 @@ func (h *BusinessHandler) GetDetail(c *gin.Context) {
 	c.JSON(http.StatusOK, detail)
 }
 
+func (h *BusinessHandler) Create(c *gin.Context) {
+	var data map[string]any
+	if err := c.ShouldBindJSON(&data); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "参数错误"})
+		return
+	}
+	if biz, err := h.svc.Create(data); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	} else {
+		c.JSON(http.StatusOK, gin.H{"business": biz})
+	}
+}
+
 func (h *BusinessHandler) AdminUpdate(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {

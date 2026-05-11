@@ -70,6 +70,7 @@ func registerRoutes(r *gin.RouterGroup, db *gorm.DB, cfg *config.Config) *AppSer
 	admin.Use(jwtAuth, bizCtx)
 	{
 		admin.GET("/businesses", businessH.List)
+		admin.POST("/businesses", businessH.Create)
 		admin.GET("/businesses/:id", businessH.GetDetail)
 		admin.PUT("/businesses/:id", businessH.AdminUpdate)
 		admin.GET("/businesses/:id/ledger", reportH.Ledger)
