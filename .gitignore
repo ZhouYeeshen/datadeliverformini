@@ -25,3 +25,4 @@ admin-dist/
 
 # DB
 *.db
+server/start-prod.bat
