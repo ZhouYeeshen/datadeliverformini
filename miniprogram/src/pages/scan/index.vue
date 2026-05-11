@@ -308,12 +308,33 @@ function goReport() {
     return
   }
 
+  const labelToKey: Record<string, string> = {
+    '餐饮': 'restaurant_revenue',
+    '零售': 'retail_revenue',
+    '住宿': 'accommodation_revenue',
+    '烟酒': 'tobacco_alcohol_revenue',
+    '其他': 'other_revenue'
+  }
+  const categories: Record<string, number> = {}
+  items.value.forEach(i => {
+    const key = labelToKey[i.label]
+    if (key) {
+      categories[key] = (categories[key] || 0) + (i.value || 0)
+    } else if (i.value > 0) {
+      categories['other_revenue'] = (categories['other_revenue'] || 0) + (i.value || 0)
+    }
+  })
+
   const data = {
     total_revenue: total,
+    restaurant_revenue: categories['restaurant_revenue'] || 0,
+    retail_revenue: categories['retail_revenue'] || 0,
+    accommodation_revenue: categories['accommodation_revenue'] || 0,
+    tobacco_alcohol_revenue: categories['tobacco_alcohol_revenue'] || 0,
+    other_revenue: categories['other_revenue'] || 0,
     photo_url: photoUrl.value || photoPath.value,
     photo_local: !photoUrl.value ? photoPath.value : '',
-    raw_text: rawText.value,
-    items: items.value.filter(i => i.value > 0)
+    raw_text: rawText.value
   }
   const params = encodeURIComponent(JSON.stringify(data))
   uni.navigateTo({ url: `/pages/report/index?data=${params}` })

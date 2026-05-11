@@ -24,6 +24,10 @@
     </view>
 
     <view class="quick-actions">
+      <navigator url="/pages/fill/index" class="action-item">
+        <view class="action-icon fill">F</view>
+        <text>手动填报</text>
+      </navigator>
       <navigator url="/pages/scan/index" class="action-item">
         <view class="action-icon scan">S</view>
         <text>扫描上报</text>
@@ -101,6 +105,7 @@ onShow(() => loadData())
 .action-icon { width: 60rpx; height: 60rpx; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: bold; margin-bottom: 12rpx; font-size: 28rpx; }
 .action-icon.scan { background: #e3f2fd; color: #2979FF; }
 .action-icon.history { background: #f3e5f5; color: #9c27b0; }
+.action-icon.fill { background: #fff3e0; color: #ff9800; }
 .action-icon.profile { background: #e8f5e9; color: #4caf50; }
 .recent-section { background: #fff; border-radius: 20rpx; padding: 30rpx; }
 .section-title { font-size: 30rpx; font-weight: bold; color: #333; margin-bottom: 20rpx; display: block; }

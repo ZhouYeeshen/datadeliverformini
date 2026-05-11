@@ -18,11 +18,16 @@ func NewReportService(rr *repository.ReportRepo, br *repository.BusinessRepo) *R
 }
 
 type SubmitReportReq struct {
-	BusinessID   uint     `json:"business_id"`
-	TotalRevenue float64  `json:"total_revenue"`
-	SourceType   string   `json:"source_type"`
-	PhotoURLs    []string `json:"photo_urls"`
-	SubmittedBy  uint     `json:"submitted_by"`
+	BusinessID            uint     `json:"business_id"`
+	TotalRevenue          float64  `json:"total_revenue"`
+	RestaurantRevenue     float64  `json:"restaurant_revenue"`
+	RetailRevenue         float64  `json:"retail_revenue"`
+	AccommodationRevenue  float64  `json:"accommodation_revenue"`
+	TobaccoAlcoholRevenue float64  `json:"tobacco_alcohol_revenue"`
+	OtherRevenue          float64  `json:"other_revenue"`
+	SourceType            string   `json:"source_type"`
+	PhotoURLs             []string `json:"photo_urls"`
+	SubmittedBy           uint     `json:"submitted_by"`
 }
 
 func (s *ReportService) Submit(req *SubmitReportReq) (*model.Report, error) {
@@ -36,15 +41,26 @@ func (s *ReportService) Submit(req *SubmitReportReq) (*model.Report, error) {
 		}
 	}
 
+	totalRevenue := req.TotalRevenue
+	categorySum := req.RestaurantRevenue + req.RetailRevenue + req.AccommodationRevenue + req.TobaccoAlcoholRevenue + req.OtherRevenue
+	if categorySum > 0 && categorySum > totalRevenue {
+		totalRevenue = categorySum
+	}
+
 	report := &model.Report{
-		BusinessID:   req.BusinessID,
-		ReportMonth:  month,
-		TotalRevenue: req.TotalRevenue,
-		SourceType:   req.SourceType,
-		PhotoURLs:    photosStr,
-		Status:       "submitted",
-		SubmittedBy:  req.SubmittedBy,
-		SubmittedAt:  time.Now(),
+		BusinessID:            req.BusinessID,
+		ReportMonth:           month,
+		RestaurantRevenue:     req.RestaurantRevenue,
+		RetailRevenue:         req.RetailRevenue,
+		AccommodationRevenue:  req.AccommodationRevenue,
+		TobaccoAlcoholRevenue: req.TobaccoAlcoholRevenue,
+		OtherRevenue:          req.OtherRevenue,
+		TotalRevenue:          totalRevenue,
+		SourceType:            req.SourceType,
+		PhotoURLs:             photosStr,
+		Status:                "submitted",
+		SubmittedBy:           req.SubmittedBy,
+		SubmittedAt:           time.Now(),
 	}
 
 	if err := s.reportRepo.Create(report); err != nil {

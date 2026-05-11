@@ -13,6 +13,10 @@
       "style": { "navigationBarTitleText": "首页" }
     },
     {
+      "path": "pages/fill/index",
+      "style": { "navigationBarTitleText": "手动填报" }
+    },
+    {
       "path": "pages/scan/index",
       "style": { "navigationBarTitleText": "扫描单据" }
     },
@@ -43,6 +47,12 @@
         "text": "首页",
         "iconPath": "static/tab-home.png",
         "selectedIconPath": "static/tab-home-active.png"
+      },
+      {
+        "pagePath": "pages/fill/index",
+        "text": "填报",
+        "iconPath": "static/tab-fill.png",
+        "selectedIconPath": "static/tab-fill-active.png"
       },
       {
         "pagePath": "pages/scan/index",

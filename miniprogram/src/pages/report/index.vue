@@ -34,12 +34,20 @@ const store = useAppStore()
 const submitting = ref(false)
 const photoUrl = ref('')
 const totalRevenue = ref(0)
+const categories = ref<Record<string, number>>({})
 
 onLoad((options: any) => {
   if (options?.data) {
     const data = JSON.parse(decodeURIComponent(options.data))
     totalRevenue.value = data.total_revenue || 0
     photoUrl.value = data.photo_url || data.photo_local || ''
+    categories.value = {
+      restaurant_revenue: data.restaurant_revenue || 0,
+      retail_revenue: data.retail_revenue || 0,
+      accommodation_revenue: data.accommodation_revenue || 0,
+      tobacco_alcohol_revenue: data.tobacco_alcohol_revenue || 0,
+      other_revenue: data.other_revenue || 0,
+    }
     // Save raw text locally for reference (not submitted)
     if (data.raw_text) {
       uni.setStorageSync('last_ocr_text', data.raw_text)
@@ -58,6 +66,11 @@ async function handleSubmit() {
   const reportData = {
     business_id: store.businessId,
     total_revenue: totalRevenue.value,
+    restaurant_revenue: categories.value.restaurant_revenue || 0,
+    retail_revenue: categories.value.retail_revenue || 0,
+    accommodation_revenue: categories.value.accommodation_revenue || 0,
+    tobacco_alcohol_revenue: categories.value.tobacco_alcohol_revenue || 0,
+    other_revenue: categories.value.other_revenue || 0,
     source_type: 'OCR',
     photo_urls: photoUrl.value ? [photoUrl.value] : []
   }
