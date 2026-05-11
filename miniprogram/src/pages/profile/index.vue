@@ -7,7 +7,6 @@
       <text class="register-desc">绑定微信与企业信息，开始使用经营数据上报</text>
     </view>
 
-    <!-- 手机号快速关联 -->
     <view class="quick-bind-card">
       <view class="card-title">已有企业？手机号快速关联</view>
       <view class="form-group">
@@ -23,7 +22,6 @@
 
     <view class="divider"><text>或注册新企业</text></view>
 
-    <!-- 完整注册表单 -->
     <view class="form-card">
       <view class="form-group">
         <text class="label">企业名称 <text class="required">*</text></text>
@@ -56,26 +54,52 @@
       </view>
       <button class="submit-btn" @click="handleBind" :loading="loading">确认注册并绑定</button>
     </view>
+
+    <view class="logout-bar">
+      <text class="logout-hint">需要切换账号？</text>
+      <text class="logout-link" @click="handleLogout">重新登录</text>
+    </view>
   </view>
 
-  <!-- 已注册直接跳转首页，此处仅作占位 -->
-  <view v-else></view>
+  <!-- ========== 已注册视图 ========== -->
+  <view class="profile-page" v-else>
+    <view class="user-card">
+      <image class="avatar" src="/static/avatar-default.png" mode="aspectFill" />
+      <text class="name">{{ store.realName || '用户' }}</text>
+      <text class="biz">{{ store.businessName }}</text>
+    </view>
+
+    <view class="info-section">
+      <view class="section-title">企业信息</view>
+      <view class="info-item">
+        <text class="info-label">企业名称</text>
+        <text class="info-value">{{ store.businessName || '-' }}</text>
+      </view>
+      <view class="info-item">
+        <text class="info-label">绑定状态</text>
+        <text class="info-value status-active">已绑定</text>
+      </view>
+    </view>
+
+    <view class="menu-section">
+      <view class="menu-item" @click="handleLogout">
+        <text class="logout-text">退出登录</text>
+        <text class="arrow">›</text>
+      </view>
+    </view>
+
+    <view class="version-tip">
+      <text>经营数据上报系统 v2.0</text>
+    </view>
+  </view>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
-import { onShow } from '@dcloudio/uni-app'
 import { useAppStore } from '../../store'
 import { bindBusiness } from '../../utils/api'
 
 const store = useAppStore()
-
-// 已注册用户直接去首页
-onShow(() => {
-  if (store.isBound) {
-    uni.switchTab({ url: '/pages/home/index' })
-  }
-})
 
 // ---- 注册相关 ----
 const loading = ref(false)
@@ -149,12 +173,25 @@ async function handleBind() {
   }
 }
 
+// ---- 退出登录 ----
+function handleLogout() {
+  uni.showModal({
+    title: '提示',
+    content: '确定要退出登录吗？',
+    success: (res) => {
+      if (res.confirm) {
+        store.logout()
+        uni.reLaunch({ url: '/pages/login/index' })
+      }
+    }
+  })
+}
 </script>
 
 <style scoped>
-.profile-page { min-height: 100vh; background: #f5f5f5; }
+.profile-page { min-height: 100vh; background: #f5f5f5; padding-bottom: 40rpx; }
 
-/* ---- 注册视图 ---- */
+/* ---- 未注册视图 ---- */
 .register-header {
   background: linear-gradient(135deg, #2979FF, #1565C0);
   padding: 60rpx 30rpx 50rpx;
@@ -174,14 +211,17 @@ async function handleBind() {
 .divider { text-align: center; margin: 20rpx; position: relative; }
 .divider text { font-size: 24rpx; color: #999; background: #f5f5f5; padding: 0 20rpx; position: relative; z-index: 1; }
 
-.form-card { background: #fff; border-radius: 16rpx; padding: 30rpx; margin: 0 20rpx 40rpx; }
+.form-card { background: #fff; border-radius: 16rpx; padding: 30rpx; margin: 0 20rpx 20rpx; }
 .form-group { margin-bottom: 30rpx; }
 .label { font-size: 28rpx; color: #333; margin-bottom: 12rpx; display: block; }
 .required { color: #f44336; }
 .input { height: 80rpx; border: 1rpx solid #e0e0e0; border-radius: 10rpx; padding: 0 20rpx; font-size: 28rpx; }
 .picker-row { height: 80rpx; border: 1rpx solid #e0e0e0; border-radius: 10rpx; padding: 0 20rpx; display: flex; align-items: center; justify-content: space-between; font-size: 28rpx; color: #333; }
-.arrow { color: #999; }
 .submit-btn { width: 100%; height: 90rpx; background: #2979FF; color: #fff; border-radius: 50rpx; border: none; font-size: 32rpx; }
+
+.logout-bar { text-align: center; padding: 30rpx; }
+.logout-hint { font-size: 24rpx; color: #999; }
+.logout-link { font-size: 26rpx; color: #f44336; margin-left: 8rpx; }
 
 /* ---- 已注册视图 ---- */
 .user-card { background: linear-gradient(135deg, #2979FF, #1565C0); padding: 60rpx 30rpx 40rpx; display: flex; flex-direction: column; align-items: center; }
@@ -191,9 +231,13 @@ async function handleBind() {
 .info-section { background: #fff; margin: 20rpx; border-radius: 16rpx; padding: 30rpx; }
 .section-title { font-size: 28rpx; color: #999; margin-bottom: 20rpx; }
 .info-item { display: flex; justify-content: space-between; padding: 16rpx 0; }
-.value { font-size: 28rpx; color: #666; }
+.info-label { font-size: 28rpx; color: #333; }
+.info-value { font-size: 28rpx; color: #666; }
 .status-active { color: #4caf50; }
-.menu-section { background: #fff; margin: 20rpx; border-radius: 16rpx; overflow: hidden; }
-.menu-item { display: flex; justify-content: space-between; padding: 30rpx; font-size: 28rpx; color: #333; border-bottom: 1rpx solid #f5f5f5; }
+.menu-section { background: #fff; margin: 0 20rpx; border-radius: 16rpx; overflow: hidden; }
+.menu-item { display: flex; justify-content: space-between; padding: 30rpx; font-size: 28rpx; color: #333; }
+.arrow { color: #ccc; }
 .logout-text { color: #f44336; }
+.version-tip { text-align: center; padding: 40rpx; }
+.version-tip text { font-size: 22rpx; color: #ccc; }
 </style>
