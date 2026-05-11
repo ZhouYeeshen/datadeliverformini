@@ -58,47 +58,24 @@
     </view>
   </view>
 
-  <!-- ========== 已注册视图 ========== -->
-  <view class="profile-page" v-else>
-    <view class="user-card">
-      <image class="avatar" src="/static/avatar-default.png" mode="aspectFill" />
-      <text class="name">{{ store.realName || '用户' }}</text>
-      <text class="biz">{{ store.businessName || '未绑定企业' }}</text>
-    </view>
-
-    <view class="info-section">
-      <view class="section-title">企业信息</view>
-      <view class="info-item">
-        <text class="label">企业名称</text>
-        <text class="value">{{ store.businessName || '-' }}</text>
-      </view>
-      <view class="info-item">
-        <text class="label">绑定状态</text>
-        <text class="value status-active">已绑定</text>
-      </view>
-    </view>
-
-    <view class="menu-section">
-      <view class="menu-item" @click="syncOfflineData">
-        <text>离线数据同步</text>
-        <text class="arrow">›</text>
-      </view>
-      <view class="menu-item" @click="handleLogout">
-        <text class="logout-text">退出登录</text>
-        <text class="arrow">›</text>
-      </view>
-    </view>
-  </view>
+  <!-- 已注册直接跳转首页，此处仅作占位 -->
+  <view v-else></view>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 import { useAppStore } from '../../store'
 import { bindBusiness } from '../../utils/api'
-import { getPendingQueue, syncPending } from '../../utils/offline-sync'
-import { submitReport } from '../../utils/api'
 
 const store = useAppStore()
+
+// 已注册用户直接去首页
+onShow(() => {
+  if (store.isBound) {
+    uni.switchTab({ url: '/pages/home/index' })
+  }
+})
 
 // ---- 注册相关 ----
 const loading = ref(false)
@@ -172,33 +149,6 @@ async function handleBind() {
   }
 }
 
-// ---- 已注册功能 ----
-async function syncOfflineData() {
-  const pending = getPendingQueue()
-  if (!pending.length) {
-    uni.showToast({ title: '无待同步数据', icon: 'none' })
-    return
-  }
-  uni.showLoading({ title: '同步中...' })
-  const synced = await syncPending(async (report) => {
-    return submitReport(report.data)
-  })
-  uni.hideLoading()
-  uni.showToast({ title: `已同步 ${synced} 条记录`, icon: 'success' })
-}
-
-function handleLogout() {
-  uni.showModal({
-    title: '提示',
-    content: '确定退出登录？',
-    success: (res) => {
-      if (res.confirm) {
-        store.logout()
-        uni.reLaunch({ url: '/pages/login/index' })
-      }
-    }
-  })
-}
 </script>
 
 <style scoped>
