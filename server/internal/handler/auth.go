@@ -46,7 +46,8 @@ func (h *AuthHandler) WeChatBind(c *gin.Context) {
 
 	var req service.BindRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "参数错误"})
+		gin.DefaultWriter.Write([]byte("[DEBUG bind] openid=" + openID + " bindErr=" + err.Error() + "\n"))
+		c.JSON(http.StatusBadRequest, gin.H{"error": "参数错误: " + err.Error()})
 		return
 	}
 
@@ -61,6 +62,12 @@ func (h *AuthHandler) WeChatBind(c *gin.Context) {
 			c.JSON(http.StatusOK, resp)
 			return
 		}
+	}
+
+	// 完整注册需要校验企业必填字段
+	if req.BusinessName == "" || req.LegalPerson == "" || req.IndustryType == "" || req.RealName == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "请填写完整的注册信息"})
+		return
 	}
 
 	resp, err := h.svc.Bind(openID, &req)

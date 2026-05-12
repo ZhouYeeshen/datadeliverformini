@@ -165,10 +165,10 @@ func (s *AuthService) devTestLogin() (*WeChatLoginResp, error) {
 }
 
 type BindRequest struct {
-	BusinessName string `json:"business_name" binding:"required"`
-	LegalPerson  string `json:"legal_person" binding:"required"`
-	IndustryType string `json:"industry_type" binding:"required"`
-	RealName     string `json:"real_name" binding:"required"`
+	BusinessName string `json:"business_name"`
+	LegalPerson  string `json:"legal_person"`
+	IndustryType string `json:"industry_type"`
+	RealName     string `json:"real_name"`
 	Phone        string `json:"phone"`
 	LicenseNo    string `json:"license_no"`
 }
