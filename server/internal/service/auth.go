@@ -1,7 +1,11 @@
 package service
 
 import (
+	"encoding/json"
 	"errors"
+	"io"
+	"net/http"
+	"net/url"
 
 	"business-report-system/internal/config"
 	"business-report-system/internal/middleware"
@@ -32,7 +36,54 @@ type WeChatLoginResp struct {
 
 const DevTestOpenID = "DEV_TEST_USER_DEV_TEST_USER_DEV"
 
-func (s *AuthService) WeChatLogin(openID string) (*WeChatLoginResp, error) {
+// code2session exchanges a WeChat login code for the real openID.
+// Falls back to using the code directly if the exchange fails (dev tools / test codes).
+func (s *AuthService) resolveOpenID(code string) string {
+	if code == DevTestOpenID {
+		return DevTestOpenID
+	}
+	if len(code) < 10 {
+		return code
+	}
+
+	// Try real code2session exchange
+	params := url.Values{}
+	params.Set("appid", s.cfg.WeChat.AppID)
+	params.Set("secret", s.cfg.WeChat.AppSecret)
+	params.Set("js_code", code)
+	params.Set("grant_type", "authorization_code")
+
+	resp, err := http.Get("https://api.weixin.qq.com/sns/jscode2session?" + params.Encode())
+	if err != nil {
+		return code[:min(32, len(code))]
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 4096))
+	if err != nil {
+		return code[:min(32, len(code))]
+	}
+
+	var result struct {
+		OpenID     string `json:"openid"`
+		SessionKey string `json:"session_key"`
+		ErrCode    int    `json:"errcode"`
+		ErrMsg     string `json:"errmsg"`
+	}
+	if err := json.Unmarshal(body, &result); err != nil {
+		return code[:min(32, len(code))]
+	}
+
+	if result.OpenID == "" {
+		return code[:min(32, len(code))]
+	}
+
+	return result.OpenID
+}
+
+func (s *AuthService) WeChatLogin(code string) (*WeChatLoginResp, error) {
+	openID := s.resolveOpenID(code)
+
 	// Dev mode: auto-provision test user
 	if openID == DevTestOpenID {
 		return s.devTestLogin()
@@ -114,7 +165,6 @@ func (s *AuthService) devTestLogin() (*WeChatLoginResp, error) {
 }
 
 type BindRequest struct {
-	OpenID       string `json:"openid" binding:"required"`
 	BusinessName string `json:"business_name" binding:"required"`
 	LegalPerson  string `json:"legal_person" binding:"required"`
 	IndustryType string `json:"industry_type" binding:"required"`
@@ -123,9 +173,9 @@ type BindRequest struct {
 	LicenseNo    string `json:"license_no"`
 }
 
-func (s *AuthService) Bind(req *BindRequest) (*WeChatLoginResp, error) {
+func (s *AuthService) Bind(openID string, req *BindRequest) (*WeChatLoginResp, error) {
 	// Check if already bound
-	existing, err := s.wechatRepo.FindByOpenID(req.OpenID)
+	existing, err := s.wechatRepo.FindByOpenID(openID)
 	if err == nil && existing != nil {
 		return nil, errors.New("该微信已绑定企业")
 	}
@@ -161,7 +211,7 @@ func (s *AuthService) Bind(req *BindRequest) (*WeChatLoginResp, error) {
 	s.businessRepo.Update(biz)
 
 	account := &model.WeChatAccount{
-		OpenID:     req.OpenID,
+		OpenID:     openID,
 		BusinessID: biz.ID,
 		RealName:   req.RealName,
 		Phone:      req.Phone,
@@ -171,7 +221,7 @@ func (s *AuthService) Bind(req *BindRequest) (*WeChatLoginResp, error) {
 		return nil, err
 	}
 
-	token, err := middleware.GenerateToken(s.cfg.JWT, account.ID, req.OpenID, "wechat")
+	token, err := middleware.GenerateToken(s.cfg.JWT, account.ID, openID, "wechat")
 	if err != nil {
 		return nil, err
 	}

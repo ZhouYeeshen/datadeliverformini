@@ -29,13 +29,7 @@ func (h *AuthHandler) WeChatLogin(c *gin.Context) {
 		return
 	}
 
-	// code → openid (simplified; in production use wx.code2Session)
-	openID := req.Code
-	if len(req.Code) > 32 {
-		openID = req.Code[:32]
-	}
-
-	resp, err := h.svc.WeChatLogin(openID)
+	resp, err := h.svc.WeChatLogin(req.Code)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -44,15 +38,21 @@ func (h *AuthHandler) WeChatLogin(c *gin.Context) {
 }
 
 func (h *AuthHandler) WeChatBind(c *gin.Context) {
+	openID := c.GetString("openid")
+	if openID == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "缺少认证信息"})
+		return
+	}
+
 	var req service.BindRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "参数错误"})
 		return
 	}
 
-	// 手机号快速关联：只传 openid + phone(+real_name)，无需企业信息
+	// 手机号快速关联：只传 phone(+real_name)，无需企业信息
 	if req.Phone != "" && req.BusinessName == "" {
-		resp, err := h.svc.AutoBindByPhone(req.OpenID, req.Phone, req.RealName)
+		resp, err := h.svc.AutoBindByPhone(openID, req.Phone, req.RealName)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
@@ -63,7 +63,7 @@ func (h *AuthHandler) WeChatBind(c *gin.Context) {
 		}
 	}
 
-	resp, err := h.svc.Bind(&req)
+	resp, err := h.svc.Bind(openID, &req)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return

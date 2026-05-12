@@ -48,7 +48,7 @@ func registerRoutes(r *gin.RouterGroup, db *gorm.DB, cfg *config.Config) *AppSer
 	auth := r.Group("/auth")
 	{
 		auth.POST("/wechat/login", authH.WeChatLogin)
-		auth.POST("/wechat/bind", authH.WeChatBind)
+		auth.POST("/wechat/bind", jwtAuth, authH.WeChatBind)
 		auth.POST("/admin/login", authH.AdminLogin)
 	}
 

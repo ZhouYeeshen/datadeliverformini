@@ -122,9 +122,7 @@ function onIndustryChange(e: any) {
 }
 
 async function doBind(data: any) {
-  const codeRes = await uni.login()
-  const bindData = { openid: codeRes.code, ...data }
-  const res = await bindBusiness(bindData)
+  const res = await bindBusiness(data)
   store.setToken(res.token)
   store.setBusiness(res)
   uni.showToast({ title: '注册成功', icon: 'success' })
@@ -167,7 +165,8 @@ async function handleBind() {
       license_no: form.licenseNo
     })
   } catch (err: any) {
-    uni.showToast({ title: err.errMsg || '注册失败', icon: 'none' })
+    const msg = err.data?.error || err.errMsg || '注册失败'
+    uni.showToast({ title: msg, icon: 'none' })
   } finally {
     loading.value = false
   }

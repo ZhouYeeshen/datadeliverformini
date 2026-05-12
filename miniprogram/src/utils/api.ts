@@ -38,7 +38,11 @@ export async function request(path: string, options: RequestOptions = {}) {
       data,
       timeout
     })
-    return (res.data as any)
+    const body = res.data as any
+    if (res.statusCode >= 400) {
+      throw { statusCode: res.statusCode, data: body }
+    }
+    return body
   } catch (err) {
     throw err
   }
@@ -50,7 +54,7 @@ export function wechatLogin(code: string) {
 }
 
 export function bindBusiness(data: any) {
-  return request('/auth/wechat/bind', { method: 'POST', data, auth: false })
+  return request('/auth/wechat/bind', { method: 'POST', data, auth: true })
 }
 
 // Report API
